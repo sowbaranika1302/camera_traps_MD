@@ -1,43 +1,3 @@
-r"""
-Module to run an animal detection model on images.
-
-The main function in this script also renders the predicted
-bounding boxes on images and saves the resulting images (with bounding boxes).
-
-This script is not a good way to process lots of images (tens of thousands,
-say). It does not facilitate checkpointing the results so if it crashes you
-would have to start from scratch. If you want to run a detector (e.g., ours)
-on lots of images, you should check out:
-
-1) run_detector_batch.py (for local execution)
-
-2) https://github.com/microsoft/CameraTraps/tree/master/api/batch_processing
-   (for running large jobs on Azure ML)
-
-To run this script, we recommend you set up a conda virtual environment
-following instructions in the Installation section on the main README, using
-`environment-detector.yml` as the environment file where asked.
-
-This is a good way to test our detector on a handful of images and get
-super-satisfying, graphical results.  It's also a good way to see how fast a
-detector model will run on a particular machine.
-
-If you would like to *not* use the GPU on the machine, set the environment
-variable CUDA_VISIBLE_DEVICES to "-1".
-
-If no output directory is specified, writes detections for c:\foo\bar.jpg to
-c:\foo\bar_detections.jpg.
-
-This script will only consider detections with > 0.005 confidence at all times.
-The `threshold` you provide is only for rendering the results. If you need to
-see lower-confidence detections, you can change
-DEFAULT_OUTPUT_CONFIDENCE_THRESHOLD.
-
-Reference:
-https://github.com/tensorflow/models/blob/master/research/object_detection/inference/detection_inference.py
-"""
-
-#%% Constants, imports, environment
 
 import argparse
 import glob
@@ -84,18 +44,6 @@ DEFAULT_DETECTOR_LABEL_MAP = {
 # that are included in output files, so that downstream applications can 
 # use them as defaults.
 DETECTOR_METADATA = {
-    'v2.0.0':
-        {'megadetector_version':'v2.0.0',
-         'typical_detection_threshold':0.8,
-         'conservative_detection_threshold':0.3},
-    'v3.0.0':
-        {'megadetector_version':'v3.0.0',
-         'typical_detection_threshold':0.8,
-         'conservative_detection_threshold':0.3},
-    'v4.1.0':
-        {'megadetector_version':'v4.1.0',
-         'typical_detection_threshold':0.8,
-         'conservative_detection_threshold':0.3},
     'v5a.0.0':
         {'megadetector_version':'v5a.0.0',
          'typical_detection_threshold':0.2,
@@ -202,9 +150,7 @@ def get_detector_version_from_filename(detector_filename):
     "v4.1.0", "v5a.0.0", and "v5b.0.0", respectively.
     """
     fn = os.path.basename(detector_filename)
-    known_model_versions = {'v2':'v2.0.0',
-                            'v3':'v3.0.0',
-                            'v4.1':'v4.1.0',
+    known_model_versions = {
                             'v5a.0.0':'v5a.0.0',
                             'v5b.0.0':'v5b.0.0'}
     matches = []
