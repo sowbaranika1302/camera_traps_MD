@@ -10,7 +10,7 @@ import warnings
 import humanfriendly
 from tqdm import tqdm
 
-import visualization.visualization_utils as viz_utils
+import visualization_utils as viz_utils
 
 # ignoring all "PIL cannot read EXIF metainfo for the images" warnings
 warnings.filterwarnings('ignore', '(Possibly )?corrupt EXIF data', UserWarning)
@@ -200,12 +200,12 @@ def load_detector(model_file, force_cpu=False):
     
     start_time = time.time()
     if model_file.endswith('.pb'):
-        from detection.tf_detector import TFDetector
+        from tf_detector import TFDetector
         if force_cpu:
             raise ValueError('force_cpu option is not currently supported for TF detectors, use CUDA_VISIBLE_DEVICES=-1')
         detector = TFDetector(model_file)
     elif model_file.endswith('.pt'):
-        from detection.pytorch_detector import PTDetector
+        from pytorch_detector import PTDetector
         detector = PTDetector(model_file, force_cpu)
     else:
         raise ValueError('Unrecognized model format: {}'.format(model_file))
@@ -233,10 +233,10 @@ def load_and_run_detector(model_file, image_file_names, output_dir,
     
     start_time = time.time()
     if model_file.endswith('.pb'):
-        from detection.tf_detector import TFDetector
+        from tf_detector import TFDetector
         detector = TFDetector(model_file)
     elif model_file.endswith('.pt'):
-        from detection.pytorch_detector import PTDetector
+        from pytorch_detector import PTDetector
         detector = PTDetector(model_file)
     elapsed = time.time() - start_time
     print('Loaded model in {}'.format(humanfriendly.format_timespan(elapsed)))

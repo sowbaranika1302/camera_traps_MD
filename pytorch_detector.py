@@ -9,7 +9,7 @@ import torch
 import numpy as np
 import traceback
 
-from detection.run_detector import CONF_DIGITS, COORD_DIGITS, FAILURE_INFER
+from run_detector import CONF_DIGITS, COORD_DIGITS, FAILURE_INFER
 import ct_utils
 
 try:
@@ -183,7 +183,7 @@ class PTDetector:
 if __name__ == '__main__':
     # for testing
 
-    import visualization.visualization_utils as viz_utils
+    import visualization_utils as viz_utils
 
     model_file = "<path to the model .pt file>"
     im_file = "test_images/test_images/island_conservation_camera_traps_palau_cam10a_cam10a12122018_palau_cam10a12122018_20181108_174532_rcnx1035.jpg"

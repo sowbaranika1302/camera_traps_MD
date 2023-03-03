@@ -5,7 +5,7 @@ running inference.
 
 import numpy as np
 
-from detection.run_detector import CONF_DIGITS, COORD_DIGITS, FAILURE_INFER
+from run_detector import CONF_DIGITS, COORD_DIGITS, FAILURE_INFER
 from ct_utils import truncate_float
 
 import tensorflow.compat.v1 as tf

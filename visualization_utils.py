@@ -15,8 +15,8 @@ import numpy as np
 import requests
 from PIL import Image, ImageFile, ImageFont, ImageDraw
 
-from data_management.annotations import annotation_constants
-from data_management.annotations.annotation_constants import (
+import annotation_constants
+from annotation_constants import (
     detector_bbox_category_id_to_name)  # here id is int
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
