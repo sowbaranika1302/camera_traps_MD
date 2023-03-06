@@ -367,6 +367,7 @@ def load_and_run_detector(model_file, image_file_names, output_dir,
                                                     std_dev_time_load))
     print('- inference took {}, std dev is {}'.format(humanfriendly.format_timespan(ave_time_infer),
                                                       std_dev_time_infer))
+    print(result['detections'])
     return result['detections']
 # ...def load_and_run_detector()
 
