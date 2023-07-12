@@ -55,6 +55,10 @@ class PTDetector:
     @staticmethod
     def _load_model(model_pt_path, device):
         checkpoint = torch.load(model_pt_path, map_location=device)
+        for m in checkpoint['model'].modules():
+            if type(m) is torch.nn.Upsample:
+                m.recompute_scale_factor = None
+        torch.save(checkpoint, model_pt_path)
         model = checkpoint['model'].float().fuse().eval()  # FP32 model
         return model
 
