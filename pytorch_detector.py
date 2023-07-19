@@ -154,7 +154,7 @@ class PTDetector:
 
                         # MegaDetector output format's categories start at 1, but this model's start at 0
                         cls = int(cls.tolist()) + 1
-                        if cls not in (1, 2, 3):
+                        if cls not in range(1, 23):
                             raise KeyError(f'{cls} is not a valid class.')
 
                         detections.append({
