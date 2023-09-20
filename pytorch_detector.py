@@ -8,6 +8,7 @@ on images.
 import torch
 import numpy as np
 import traceback
+from torchvision import transforms
 import tritonclient.http as httpclient
 from torchvision import transforms
 from run_detector import CONF_DIGITS, COORD_DIGITS, FAILURE_INFER
@@ -120,6 +121,8 @@ class PTDetector:
             img = img.to(self.device)
             img = img.float()
             img /= 255
+            preprocess = transforms.Compose([transforms.Resize([640,640]),transforms.ToTensor()])
+            img = preprocess(img)
             
 
             if len(img.shape) == 3:  # always true for now, TODO add inference using larger batch size
