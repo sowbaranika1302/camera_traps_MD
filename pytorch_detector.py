@@ -120,10 +120,14 @@ class PTDetector:
             img = img.to(self.device)
             img = img.float()
             img /= 255
+            
 
             if len(img.shape) == 3:  # always true for now, TODO add inference using larger batch size
                 img = torch.unsqueeze(img, 0).numpy()
                 print("hello inside if")
+            else:
+                img = img.numpy()
+                print("hello img if")
             print(img.shape)
 
             #pred: list = self.model(img)[0]
