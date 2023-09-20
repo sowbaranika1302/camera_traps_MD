@@ -9,6 +9,7 @@ import torch
 import numpy as np
 import traceback
 import tritonclient.http as httpclient
+from torchvision import transforms
 from run_detector import CONF_DIGITS, COORD_DIGITS, FAILURE_INFER
 import ct_utils
 
@@ -88,6 +89,7 @@ class PTDetector:
         try:
             
             img_original = np.asarray(img_original)
+            
 
             # padded resize
             target_size = PTDetector.IMAGE_SIZE
@@ -120,7 +122,7 @@ class PTDetector:
             img /= 255
 
             if len(img.shape) == 3:  # always true for now, TODO add inference using larger batch size
-                img = torch.unsqueeze(img, 0)
+                img = torch.unsqueeze(img, 0).numpy()
             print(img.shape)
 
             #pred: list = self.model(img)[0]
