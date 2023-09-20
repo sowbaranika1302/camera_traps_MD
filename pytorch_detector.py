@@ -8,7 +8,7 @@ on images.
 import torch
 import numpy as np
 import traceback
-
+import tritonclient.http as httpclient
 from run_detector import CONF_DIGITS, COORD_DIGITS, FAILURE_INFER
 import ct_utils
 
@@ -45,22 +45,23 @@ class PTDetector:
                     self.device = 'mps'
             except AttributeError:
                 pass
-        self.model = PTDetector._load_model(model_path, self.device)
-        if (self.device != 'cpu'):
-            print('Sending model to GPU')
-            self.model.to(self.device)
+        self.client = httpclient.InferenceServerClient(url="localhost:8000")
+        # self.model = PTDetector._load_model(model_path, self.device)
+        # if (self.device != 'cpu'):
+        #     print('Sending model to GPU')
+        #     self.model.to(self.device)
             
         self.printed_image_size_warning = False
 
-    @staticmethod
-    def _load_model(model_pt_path, device):
-        checkpoint = torch.load(model_pt_path, map_location=device)
-        for m in checkpoint['model'].modules():
-            if type(m) is torch.nn.Upsample:
-                m.recompute_scale_factor = None
-        torch.save(checkpoint, model_pt_path)
-        model = checkpoint['model'].float().fuse().eval()  # FP32 model
-        return model
+    # @staticmethod
+    # def _load_model(model_pt_path, device):
+    #     checkpoint = torch.load(model_pt_path, map_location=device)
+    #     for m in checkpoint['model'].modules():
+    #         if type(m) is torch.nn.Upsample:
+    #             m.recompute_scale_factor = None
+    #     torch.save(checkpoint, model_pt_path)
+    #     model = checkpoint['model'].float().fuse().eval()  # FP32 model
+    #     return model
 
     def generate_detections_one_image(self, img_original, image_id, detection_threshold, image_size=None):
         """Apply the detector to an image.
@@ -120,8 +121,19 @@ class PTDetector:
 
             if len(img.shape) == 3:  # always true for now, TODO add inference using larger batch size
                 img = torch.unsqueeze(img, 0)
+            print(img.shape)
 
-            pred: list = self.model(img)[0]
+            #pred: list = self.model(img)[0]
+            inputs = httpclient.InferInput("images", img.shape, datatype="FP32")
+            inputs.set_data_from_numpy(img, binary_data=True)
+
+            outputs = httpclient.InferRequestedOutput("output0", binary_data=True, class_count=4)
+
+            # Querying the server
+            results = self.client.infer(model_name="object_detection", inputs=[inputs], outputs=[outputs])
+            inference_output = results.as_numpy('output0')
+            print(inference_output[:5])
+
 
             # NMS
             if self.device == 'mps':
