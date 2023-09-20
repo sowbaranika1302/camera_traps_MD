@@ -122,7 +122,7 @@ class PTDetector:
             img = img.float()
             img /= 255
             preprocess = transforms.Compose([transforms.Resize([640,640]),transforms.ToTensor()])
-            img = preprocess(img)
+            img = preprocess(img_original)
             
 
             if len(img.shape) == 3:  # always true for now, TODO add inference using larger batch size
