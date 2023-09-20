@@ -121,7 +121,7 @@ class PTDetector:
             img = img.to(self.device)
             img = img.float()
             img /= 255
-            preprocess = transforms.Compose([transforms.Resize([640,640]),transforms.ToTensor()])
+            preprocess = transforms.Compose([transforms.ToPILImage(),transforms.Resize([640,640]),transforms.ToTensor()])
             img = preprocess(img_original)
             
 
