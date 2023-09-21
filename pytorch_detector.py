@@ -141,8 +141,8 @@ class PTDetector:
 
             # Querying the server
             results = self.client.infer(model_name="object_detection", inputs=[inputs], outputs=[outputs])
-            inference_output = results.as_numpy('output0')
-            print(inference_output[:5])
+            pred = results.as_numpy('output0')
+            print(pred[:5])
 
 
             # NMS
