@@ -47,7 +47,7 @@ class PTDetector:
                     self.device = 'mps'
             except AttributeError:
                 pass
-        self.client = httpclient.InferenceServerClient(url="localhost:8000")
+        self.client = httpclient.InferenceServerClient(url="172.17.0.1:8000")
         # self.model = PTDetector._load_model(model_path, self.device)
         # if (self.device != 'cpu'):
         #     print('Sending model to GPU')
