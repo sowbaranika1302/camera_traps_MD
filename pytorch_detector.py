@@ -57,7 +57,7 @@ class PTDetector:
             
         self.printed_image_size_warning = False
 
-    # @staticmethod
+    @staticmethod
     def _load_model(model_pt_path, device):
           model = torch.jit.load(model_pt_path)
           model.eval()
@@ -128,15 +128,15 @@ class PTDetector:
             img = img.to(self.device)
             img = img.float()
             img /= 255
-            preprocess = transforms.Compose([transforms.ToPILImage(),transforms.Resize([640,640]),transforms.ToTensor()])
-            img = preprocess(img_original)
+            #preprocess = transforms.Compose([transforms.ToPILImage(),transforms.Resize([640,640]),transforms.ToTensor()])
+            #img = preprocess(img_original)
             
 
             if len(img.shape) == 3:  # always true for now, TODO add inference using larger batch size
                 img = torch.unsqueeze(img, 0)
                 print("hello inside if")
             else:
-                img = img.numpy()
+                #img = img.numpy()
                 print("hello img if")
             print(img.shape)
             img_nd = img.cpu().numpy()
@@ -148,19 +148,20 @@ class PTDetector:
                 npt = np.asarray(pred_json)
                 tt = torch.from_numpy(npt)
                 pred = tt
+                print("pred",pred)
             else:
                 print("Error")
 
             #pred: list = self.model(img)[0]
-            inputs = httpclient.InferInput("images", img.shape, datatype="FP32")
-            inputs.set_data_from_numpy(img, binary_data=True)
+            # inputs = httpclient.InferInput("images", img.shape, datatype="FP32")
+            # inputs.set_data_from_numpy(img, binary_data=True)
 
-            outputs = httpclient.InferRequestedOutput("output0", binary_data=True, class_count=4)
+            # outputs = httpclient.InferRequestedOutput("output0", binary_data=True, class_count=4)
 
             # Querying the server
-            results = self.client.infer(model_name="object_detection", inputs=[inputs], outputs=[outputs])
-            pred = results.as_numpy('output0')
-            print(pred[:5])
+            # results = self.client.infer(model_name="object_detection", inputs=[inputs], outputs=[outputs])
+            # pred = results.as_numpy('output0')
+            # print(pred[:5])
 
 
             # NMS
