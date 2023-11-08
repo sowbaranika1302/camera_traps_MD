@@ -13,6 +13,8 @@ import tritonclient.http as httpclient
 from torchvision import transforms
 from run_detector import CONF_DIGITS, COORD_DIGITS, FAILURE_INFER
 import ct_utils
+import requests
+import json
 
 try:
     # import pre- and post-processing functions from the YOLOv5 repo https://github.com/ultralytics/yolov5
@@ -47,23 +49,28 @@ class PTDetector:
                     self.device = 'mps'
             except AttributeError:
                 pass
-        self.client = httpclient.InferenceServerClient(url="172.17.0.1:8000")
-        # self.model = PTDetector._load_model(model_path, self.device)
-        # if (self.device != 'cpu'):
-        #     print('Sending model to GPU')
-        #     self.model.to(self.device)
+        #self.client = httpclient.InferenceServerClient(url="172.17.0.1:8000")
+        self.model = PTDetector._load_model(model_path, self.device)
+        if (self.device != 'cpu'):
+            print('Sending model to GPU')
+            self.model.to(self.device)
             
         self.printed_image_size_warning = False
 
     # @staticmethod
-    # def _load_model(model_pt_path, device):
+    def _load_model(model_pt_path, device):
+          model = torch.jit.load(model_pt_path)
+          model.eval()
+          return model
     #     checkpoint = torch.load(model_pt_path, map_location=device)
     #     for m in checkpoint['model'].modules():
     #         if type(m) is torch.nn.Upsample:
     #             m.recompute_scale_factor = None
     #     torch.save(checkpoint, model_pt_path)
     #     model = checkpoint['model'].float().fuse().eval()  # FP32 model
-    #     return model
+          
+
+         
 
     def generate_detections_one_image(self, img_original, image_id, detection_threshold, image_size=None):
         """Apply the detector to an image.
@@ -126,12 +133,23 @@ class PTDetector:
             
 
             if len(img.shape) == 3:  # always true for now, TODO add inference using larger batch size
-                img = torch.unsqueeze(img, 0).numpy()
+                img = torch.unsqueeze(img, 0)
                 print("hello inside if")
             else:
                 img = img.numpy()
                 print("hello img if")
             print(img.shape)
+            img_nd = img.cpu().numpy()
+            data2 = {"inputs":img_nd.tolist()}
+            req = requests.post("172.17.0.1:8000", json=data2)
+            if req.ok:
+                text = req.text
+                pred_json = json.loads(text)["predictions"]
+                npt = np.asarray(pred_json)
+                tt = torch.from_numpy(npt)
+                pred = tt
+            else:
+                print("Error")
 
             #pred: list = self.model(img)[0]
             inputs = httpclient.InferInput("images", img.shape, datatype="FP32")
