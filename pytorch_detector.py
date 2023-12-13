@@ -8,13 +8,10 @@ on images.
 import torch
 import numpy as np
 import traceback
-from torchvision import transforms
 import tritonclient.http as httpclient
-from torchvision import transforms
+import torchvision
 from run_detector import CONF_DIGITS, COORD_DIGITS, FAILURE_INFER
 import ct_utils
-import requests
-import json
 
 try:
     # import pre- and post-processing functions from the YOLOv5 repo https://github.com/ultralytics/yolov5
@@ -49,7 +46,6 @@ class PTDetector:
                     self.device = 'mps'
             except AttributeError:
                 pass
-        #self.client = httpclient.InferenceServerClient(url="172.17.0.1:8000")
         self.model = PTDetector._load_model(model_path, self.device)
         if (self.device != 'cpu'):
             print('Sending model to GPU')
@@ -59,18 +55,13 @@ class PTDetector:
 
     @staticmethod
     def _load_model(model_pt_path, device):
-          model = torch.jit.load(model_pt_path)
-          model.eval()
-          return model
-    #     checkpoint = torch.load(model_pt_path, map_location=device)
-    #     for m in checkpoint['model'].modules():
-    #         if type(m) is torch.nn.Upsample:
-    #             m.recompute_scale_factor = None
-    #     torch.save(checkpoint, model_pt_path)
-    #     model = checkpoint['model'].float().fuse().eval()  # FP32 model
-          
-
-         
+        checkpoint = torch.load(model_pt_path, map_location=device)
+        for m in checkpoint['model'].modules():
+            if type(m) is torch.nn.Upsample:
+                m.recompute_scale_factor = None
+        torch.save(checkpoint, model_pt_path)
+        model = checkpoint['model'].float().fuse().eval()  # FP32 model
+        return model
 
     def generate_detections_one_image(self, img_original, image_id, detection_threshold, image_size=None):
         """Apply the detector to an image.
@@ -97,7 +88,6 @@ class PTDetector:
         try:
             
             img_original = np.asarray(img_original)
-            
 
             # padded resize
             target_size = PTDetector.IMAGE_SIZE
@@ -128,40 +118,45 @@ class PTDetector:
             img = img.to(self.device)
             img = img.float()
             img /= 255
-            #preprocess = transforms.Compose([transforms.ToPILImage(),transforms.Resize([640,640]),transforms.ToTensor()])
-            #img = preprocess(img_original)
-            
 
             if len(img.shape) == 3:  # always true for now, TODO add inference using larger batch size
                 img = torch.unsqueeze(img, 0)
-                print("hello inside if")
-            else:
-                #img = img.numpy()
-                print("hello img if")
-            print(img.shape)
-            img_nd = img.cpu().numpy()
-            data2 = {"inputs":img_nd.tolist()}
-            req = requests.post("172.17.0.1:8000", json=data2)
-            if req.ok:
-                text = req.text
-                pred_json = json.loads(text)["predictions"]
-                npt = np.asarray(pred_json)
-                tt = torch.from_numpy(npt)
-                pred = tt
-                print("pred",pred)
-            else:
-                print("Error")
 
-            #pred: list = self.model(img)[0]
-            # inputs = httpclient.InferInput("images", img.shape, datatype="FP32")
-            # inputs.set_data_from_numpy(img, binary_data=True)
+             # OMITTING THIS LINE WHICH WILL BE REPLACED BY TRITON CODE.
+            # pred: list = self.model(img)[0]
 
-            # outputs = httpclient.InferRequestedOutput("output0", binary_data=True, class_count=4)
 
-            # Querying the server
-            # results = self.client.infer(model_name="object_detection", inputs=[inputs], outputs=[outputs])
-            # pred = results.as_numpy('output0')
-            # print(pred[:5])
+            #-------------------------------------------------------------Triton Client---------------------------------------------------------------------#
+            # Establish connection to Triton
+            client = httpclient.InferenceServerClient(url="triton:8000")
+
+            # Get input ready, here we are going to resize the image to dimensions (640x640).
+            # TensorRT version of yolov5 requires minimum batch size of 4,
+            #   which is why the image is repeated 4 times in the batch.
+            img = torchvision.transforms.Resize((640,640))(img).repeat(4,1,1,1)
+
+            # Infer input types from Triton and add the image data to the request.
+            input_tensor = [httpclient.InferInput("images",
+                                                  img.cpu().numpy().shape,
+                                                  datatype="FP32"
+                                                  )]
+            input_tensor[0].set_data_from_numpy(img.cpu().numpy())
+
+            # Set Outputs data type.
+            output_tensor = [httpclient.InferRequestedOutput("output0", binary_data=False)]
+
+            # Send image to Triton
+            resp = client.infer("object_detection",
+                                model_version="1",
+                                inputs=input_tensor,
+                                outputs=output_tensor
+                                )
+
+            # Retrieve the detection results from Triton's response
+            pred = torch.from_numpy(resp.as_numpy("output0")).to(self.device)
+            #-------------------------------------------------------------Triton Client---------------------------------------------------------------------#
+
+            # CONTINUE WITH REGUALR EXECUTION OF MEGADETECTOR
 
 
             # NMS
