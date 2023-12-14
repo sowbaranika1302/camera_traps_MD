@@ -154,7 +154,7 @@ class PTDetector:
 
             # Retrieve the detection results from Triton's response
             pred = torch.from_numpy(resp.as_numpy("output0")).to(self.device)
-            print(pred.size())
+            print(pred[0])
             #-------------------------------------------------------------Triton Client---------------------------------------------------------------------#
 
             # CONTINUE WITH REGUALR EXECUTION OF MEGADETECTOR
