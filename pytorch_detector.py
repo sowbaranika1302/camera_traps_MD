@@ -180,7 +180,7 @@ class PTDetector:
 
         result['max_detection_conf'] = max_conf
         result['detections'] = detections
-
+        print("hello testing in new repo")
         return result
 
 
