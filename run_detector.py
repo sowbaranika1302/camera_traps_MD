@@ -1,4 +1,3 @@
-
 import argparse
 import glob
 import os
@@ -13,21 +12,21 @@ from tqdm import tqdm
 import visualization_utils as viz_utils
 
 # ignoring all "PIL cannot read EXIF metainfo for the images" warnings
-warnings.filterwarnings('ignore', '(Possibly )?corrupt EXIF data', UserWarning)
+warnings.filterwarnings("ignore", "(Possibly )?corrupt EXIF data", UserWarning)
 
 # Metadata Warning, tag 256 had too many entries: 42, expected 1
-warnings.filterwarnings('ignore', 'Metadata warning', UserWarning)
+warnings.filterwarnings("ignore", "Metadata warning", UserWarning)
 
 # Numpy FutureWarnings from tensorflow import
-warnings.filterwarnings('ignore', category=FutureWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 # Useful hack to force CPU inference
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 
 # An enumeration of failure reasons
-FAILURE_INFER = 'Failure inference'
-FAILURE_IMAGE_OPEN = 'Failure image access'
+FAILURE_INFER = "Failure inference"
+FAILURE_IMAGE_OPEN = "Failure image access"
 
 # Number of decimal places to round to for confidence and bbox coordinates
 CONF_DIGITS = 3
@@ -35,62 +34,67 @@ COORD_DIGITS = 4
 
 # Label mapping for MegaDetector
 DEFAULT_DETECTOR_LABEL_MAP = {
-    '1': 'animal',
-    '2': 'person',
-    '3': 'vehicle',
-    '4': 'None',
-    '5': 'None',
-    '6': 'None',
-    '7': 'None',
-    '8': 'None',
-    '9': 'None',
-    '10': 'None',
-    '11': 'None',
-    '12': 'None',
-    '13': 'None',
-    '14': 'None',
-    '15': 'None',
-    '16': 'None',
-    '17': 'None',
-    '18': 'None',
-    '19': 'None',
-    '20': 'None',
-    '21': 'None',
-    '22': 'None',
-    '23': 'None'
+    "0": "bird",
+    "1": "eastern gray squirrel",
+    "2": "eastern chipmunk",
+    "3": "woodchuck",
+    "4": "wild turkey",
+    "5": "white-tailed deer",
+    "6": "virginia opossum",
+    "7": "eastern cottontail",
+    "8": "empty",
+    "9": "vehicle",
+    "10": "striped skunk",
+    "11": "red fox",
+    "12": "eastern fox squirrel",
+    "13": "northern raccoon",
+    "14": "grey fox",
+    "15": "horse",
+    "16": "dog",
+    "17": "american crow",
+    "18": "chicken",
+    "19": "domestic cat",
+    "20": "coyote",
+    "21": "bobcat",
+    "22": "american black bear",
     # available in megadetector v4+
 }
 
 # Each version of the detector is associated with some "typical" values
-# that are included in output files, so that downstream applications can 
+# that are included in output files, so that downstream applications can
 # use them as defaults.
 DETECTOR_METADATA = {
-    'v5a.0.0':
-        {'megadetector_version':'v5a.0.0',
-         'typical_detection_threshold':0.2,
-         'conservative_detection_threshold':0.05},
-    'v5b.0.0':
-        {'megadetector_version':'v5b.0.0',
-         'typical_detection_threshold':0.2,
-         'conservative_detection_threshold':0.05}
+    "v5a.0.0": {
+        "megadetector_version": "v5a.0.0",
+        "typical_detection_threshold": 0.2,
+        "conservative_detection_threshold": 0.05,
+    },
+    "v5b.0.0": {
+        "megadetector_version": "v5b.0.0",
+        "typical_detection_threshold": 0.2,
+        "conservative_detection_threshold": 0.05,
+    },
 }
 
-DEFAULT_RENDERING_CONFIDENCE_THRESHOLD = DETECTOR_METADATA['v5b.0.0']['typical_detection_threshold']
+DEFAULT_RENDERING_CONFIDENCE_THRESHOLD = DETECTOR_METADATA["v5b.0.0"][
+    "typical_detection_threshold"
+]
 DEFAULT_OUTPUT_CONFIDENCE_THRESHOLD = 0.005
 
 DEFAULT_BOX_THICKNESS = 4
 DEFAULT_BOX_EXPANSION = 0
 
 
-#%% Classes
+# %% Classes
+
 
 class ImagePathUtils:
     """A collection of utility functions supporting this stand-alone script"""
 
     # Stick this into filenames before the extension for the rendered result
-    DETECTION_FILENAME_INSERT = '_detections'
+    DETECTION_FILENAME_INSERT = "_detections"
 
-    image_extensions = ['.jpg', '.jpeg', '.gif', '.png']
+    image_extensions = [".jpg", ".jpeg", ".gif", ".png"]
 
     @staticmethod
     def is_image_file(s):
@@ -114,16 +118,17 @@ class ImagePathUtils:
         Find all files in a directory that look like image file names
         """
         if recursive:
-            strings = glob.glob(os.path.join(dir_name, '**', '*.*'), recursive=True)
+            strings = glob.glob(os.path.join(dir_name, "**", "*.*"), recursive=True)
         else:
-            strings = glob.glob(os.path.join(dir_name, '*.*'))
+            strings = glob.glob(os.path.join(dir_name, "*.*"))
 
         image_strings = ImagePathUtils.find_image_files(strings)
 
         return image_strings
 
 
-#%% Utility functions
+# %% Utility functions
+
 
 def convert_to_tf_coords(array):
     """From [x1, y1, width, height] to [y1, x1, y2, x2], where x1 is x_min, x2 is x_max
@@ -145,10 +150,12 @@ def get_detector_metadata_from_version_string(detector_version):
     the model.  Used for writing standard defaults to batch output files.
     """
     if detector_version not in DETECTOR_METADATA:
-        print('Warning: no metadata for unknown detector version {}'.format(detector_version))
-        default_detector_metadata = {
-            'megadetector_version':'unknown'
-        }
+        print(
+            "Warning: no metadata for unknown detector version {}".format(
+                detector_version
+            )
+        )
+        default_detector_metadata = {"megadetector_version": "unknown"}
         return default_detector_metadata
     else:
         return DETECTOR_METADATA[detector_version]
@@ -156,111 +163,137 @@ def get_detector_metadata_from_version_string(detector_version):
 
 def get_detector_version_from_filename(detector_filename):
     """
-    Get the version number component of the detector from the model filename.  
-    
+    Get the version number component of the detector from the model filename.
+
     *detector_filename* will almost always end with one of the following:
-        
+
     megadetector_v2.pb
     megadetector_v3.pb
     megadetector_v4.1 (not produed by run_detector_batch.py, only found in Azure Batch API output files)
     md_v4.1.0.pb
     md_v5a.0.0.pt
     md_v5b.0.0.pt
-    
-    ...for which we identify the version number as "v2.0.0", "v3.0.0", "v4.1.0", 
+
+    ...for which we identify the version number as "v2.0.0", "v3.0.0", "v4.1.0",
     "v4.1.0", "v5a.0.0", and "v5b.0.0", respectively.
     """
     fn = os.path.basename(detector_filename)
-    known_model_versions = {
-                            'v5a.0.0':'v5a.0.0',
-                            'v5b.0.0':'v5b.0.0'}
+    known_model_versions = {"v5a.0.0": "v5a.0.0", "v5b.0.0": "v5b.0.0"}
     matches = []
     for s in known_model_versions.keys():
         if s in fn:
             matches.append(s)
     if len(matches) == 0:
-        print('Warning: could not determine MegaDetector version for model file {}'.format(detector_filename))
-        return 'unknown'
+        print(
+            "Warning: could not determine MegaDetector version for model file {}".format(
+                detector_filename
+            )
+        )
+        return "unknown"
     elif len(matches) > 1:
-        print('Warning: multiple MegaDetector versions for model file {}'.format(detector_filename))
-        return 'multiple'
+        print(
+            "Warning: multiple MegaDetector versions for model file {}".format(
+                detector_filename
+            )
+        )
+        return "multiple"
     else:
         return known_model_versions[matches[0]]
-    
-    
+
+
 def is_gpu_available(model_file):
     """Decide whether a GPU is available, importing PyTorch or TF depending on the extension
-    of model_file.  Does not actually load model_file, just uses that to determine how to check 
+    of model_file.  Does not actually load model_file, just uses that to determine how to check
     for GPU availability."""
-    
-    if model_file.endswith('.pb'):
+
+    if model_file.endswith(".pb"):
         import tensorflow.compat.v1 as tf
+
         gpu_available = tf.test.is_gpu_available()
-        print('TensorFlow version:', tf.__version__)
-        print('tf.test.is_gpu_available:', gpu_available)                
+        print("TensorFlow version:", tf.__version__)
+        print("tf.test.is_gpu_available:", gpu_available)
         return gpu_available
-    elif model_file.endswith('.pt'):
+    elif model_file.endswith(".pt"):
         import torch
+
         gpu_available = torch.cuda.is_available()
-        print('PyTorch reports {} available CUDA devices'.format(torch.cuda.device_count()))
+        print(
+            "PyTorch reports {} available CUDA devices".format(
+                torch.cuda.device_count()
+            )
+        )
         if not gpu_available:
             try:
-                
+
                 if torch.backends.mps.is_built and torch.backends.mps.is_available():
                     gpu_available = True
-                    print('PyTorch reports Metal Performance Shaders are available')
+                    print("PyTorch reports Metal Performance Shaders are available")
             except AttributeError:
                 pass
         return gpu_available
     else:
-        raise ValueError('Unrecognized model file extension for model {}'.format(model_file))
+        raise ValueError(
+            "Unrecognized model file extension for model {}".format(model_file)
+        )
 
 
 def load_detector(model_file, force_cpu=False):
     """Load a TF or PT detector, depending on the extension of model_file."""
-    
+
     start_time = time.time()
-    if model_file.endswith('.pb'):
+    if model_file.endswith(".pb"):
         from tf_detector import TFDetector
+
         if force_cpu:
-            raise ValueError('force_cpu option is not currently supported for TF detectors, use CUDA_VISIBLE_DEVICES=-1')
+            raise ValueError(
+                "force_cpu option is not currently supported for TF detectors, use CUDA_VISIBLE_DEVICES=-1"
+            )
         detector = TFDetector(model_file)
-    elif model_file.endswith('.pt'):
+    elif model_file.endswith(".pt"):
         from pytorch_detector import PTDetector
+
         detector = PTDetector(model_file, force_cpu)
     else:
-        raise ValueError('Unrecognized model format: {}'.format(model_file))
+        raise ValueError("Unrecognized model format: {}".format(model_file))
     elapsed = time.time() - start_time
-    print('Loaded model in {}'.format(humanfriendly.format_timespan(elapsed)))
+    print("Loaded model in {}".format(humanfriendly.format_timespan(elapsed)))
     return detector
 
 
-#%% Main function
+# %% Main function
 
-def load_and_run_detector(model_file, image_file_names, output_dir,
-                          render_confidence_threshold=DEFAULT_RENDERING_CONFIDENCE_THRESHOLD,
-                          crop_images=False, box_thickness=DEFAULT_BOX_THICKNESS, 
-                          box_expansion=DEFAULT_BOX_EXPANSION, image_size=None
-                          ):
+
+def load_and_run_detector(
+    model_file,
+    image_file_names,
+    output_dir,
+    render_confidence_threshold=DEFAULT_RENDERING_CONFIDENCE_THRESHOLD,
+    crop_images=False,
+    box_thickness=DEFAULT_BOX_THICKNESS,
+    box_expansion=DEFAULT_BOX_EXPANSION,
+    image_size=None,
+):
     """Load and run detector on target images, and visualize the results."""
-    
+
     if len(image_file_names) == 0:
-        print('Warning: no files available')
+        print("Warning: no files available")
         return
 
-    print('GPU available: {}'.format(is_gpu_available(model_file)))
-    
+    print("GPU available: {}".format(is_gpu_available(model_file)))
+
     detector = load_detector(model_file)
-    
+
     start_time = time.time()
-    if model_file.endswith('.pb'):
+    if model_file.endswith(".pb"):
         from tf_detector import TFDetector
+
         detector = TFDetector(model_file)
-    elif model_file.endswith('.pt'):
+    elif model_file.endswith(".pt"):
         from pytorch_detector import PTDetector
+
         detector = PTDetector(model_file)
     elapsed = time.time() - start_time
-    print('Loaded model in {}'.format(humanfriendly.format_timespan(elapsed)))
+    print("Loaded model in {}".format(humanfriendly.format_timespan(elapsed)))
 
     detection_results = []
     time_load = []
@@ -303,11 +336,11 @@ def load_and_run_detector(model_file, image_file_names, output_dir,
         fn = os.path.basename(fn).lower()
         name, ext = os.path.splitext(fn)
         if crop_index >= 0:
-            name += '_crop{:0>2d}'.format(crop_index)
-        fn = '{}{}{}'.format(name, ImagePathUtils.DETECTION_FILENAME_INSERT, '.jpg')
+            name += "_crop{:0>2d}".format(crop_index)
+        fn = "{}{}{}".format(name, ImagePathUtils.DETECTION_FILENAME_INSERT, ".jpg")
         if fn in output_filename_collision_counts:
             n_collisions = output_filename_collision_counts[fn]
-            fn = '{:0>4d}'.format(n_collisions) + '_' + fn
+            fn = "{:0>4d}".format(n_collisions) + "_" + fn
             output_filename_collision_counts[fn] += 1
         else:
             output_filename_collision_counts[fn] = 0
@@ -315,7 +348,7 @@ def load_and_run_detector(model_file, image_file_names, output_dir,
         return fn
 
     # ...def input_file_to_detection_file()
-    
+
     for im_file in tqdm(image_file_names):
 
         try:
@@ -327,34 +360,38 @@ def load_and_run_detector(model_file, image_file_names, output_dir,
             time_load.append(elapsed)
 
         except Exception as e:
-            print('Image {} cannot be loaded. Exception: {}'.format(im_file, e))
-            result = {
-                'file': im_file,
-                'failure': FAILURE_IMAGE_OPEN
-            }
+            print("Image {} cannot be loaded. Exception: {}".format(im_file, e))
+            result = {"file": im_file, "failure": FAILURE_IMAGE_OPEN}
             detection_results.append(result)
             continue
 
         try:
             start_time = time.time()
 
-            result = detector.generate_detections_one_image(image, im_file,
-                                                            detection_threshold=DEFAULT_OUTPUT_CONFIDENCE_THRESHOLD,
-                                                            image_size=image_size)
+            result = detector.generate_detections_one_image(
+                image,
+                im_file,
+                detection_threshold=DEFAULT_OUTPUT_CONFIDENCE_THRESHOLD,
+                image_size=image_size,
+            )
             detection_results.append(result)
 
             elapsed = time.time() - start_time
             time_infer.append(elapsed)
 
         except Exception as e:
-            print('An error occurred while running the detector on image {}. Exception: {}'.format(im_file, e))
+            print(
+                "An error occurred while running the detector on image {}. Exception: {}".format(
+                    im_file, e
+                )
+            )
             continue
 
         try:
             if crop_images:
 
-                images_cropped = viz_utils.crop_image(result['detections'], image)
-                
+                images_cropped = viz_utils.crop_image(result["detections"], image)
+
                 for i_crop, cropped_image in enumerate(images_cropped):
                     output_full_path = input_file_to_detection_file(im_file, i_crop)
                     cropped_image.save(output_full_path)
@@ -362,15 +399,23 @@ def load_and_run_detector(model_file, image_file_names, output_dir,
             else:
 
                 # Image is modified in place
-                viz_utils.render_detection_bounding_boxes(result['detections'], image,
-                                                          label_map=DEFAULT_DETECTOR_LABEL_MAP,
-                                                          confidence_threshold=render_confidence_threshold,
-                                                          thickness=box_thickness, expansion=box_expansion)
+                viz_utils.render_detection_bounding_boxes(
+                    result["detections"],
+                    image,
+                    label_map=DEFAULT_DETECTOR_LABEL_MAP,
+                    confidence_threshold=render_confidence_threshold,
+                    thickness=box_thickness,
+                    expansion=box_expansion,
+                )
                 output_full_path = input_file_to_detection_file(im_file)
                 image.save(output_full_path)
 
         except Exception as e:
-            print('Visualizing results on the image {} failed. Exception: {}'.format(im_file, e))
+            print(
+                "Visualizing results on the image {} failed. Exception: {}".format(
+                    im_file, e
+                )
+            )
             continue
 
     # ...for each image
@@ -381,98 +426,133 @@ def load_and_run_detector(model_file, image_file_names, output_dir,
         std_dev_time_load = humanfriendly.format_timespan(statistics.stdev(time_load))
         std_dev_time_infer = humanfriendly.format_timespan(statistics.stdev(time_infer))
     else:
-        std_dev_time_load = 'not available'
-        std_dev_time_infer = 'not available'
-    print('On average, for each image,')
-    print('- loading took {}, std dev is {}'.format(humanfriendly.format_timespan(ave_time_load),
-                                                    std_dev_time_load))
-    print('- inference took {}, std dev is {}'.format(humanfriendly.format_timespan(ave_time_infer),
-                                                      std_dev_time_infer))
-    print(result['detections'])
-    return result['detections']
+        std_dev_time_load = "not available"
+        std_dev_time_infer = "not available"
+    print("On average, for each image,")
+    print(
+        "- loading took {}, std dev is {}".format(
+            humanfriendly.format_timespan(ave_time_load), std_dev_time_load
+        )
+    )
+    print(
+        "- inference took {}, std dev is {}".format(
+            humanfriendly.format_timespan(ave_time_infer), std_dev_time_infer
+        )
+    )
+    print(result["detections"])
+    return result["detections"]
+
+
 # ...def load_and_run_detector()
 
 
-#%% Command-line driver
+# %% Command-line driver
+
 
 def main():
 
     parser = argparse.ArgumentParser(
-        description='Module to run an animal detection model on images')
-    
+        description="Module to run an animal detection model on images"
+    )
+
     parser.add_argument(
-        'detector_file',
-        help='Path to TensorFlow (.pb) or PyTorch (.pt) detector model file')
-    
+        "detector_file",
+        help="Path to TensorFlow (.pb) or PyTorch (.pt) detector model file",
+    )
+
     # Must specify either an image file or a directory
-    group = parser.add_mutually_exclusive_group(required=True)    
+    group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
-        '--image_file',
-        help='Single file to process, mutually exclusive with --image_dir')
+        "--image_file",
+        help="Single file to process, mutually exclusive with --image_dir",
+    )
     group.add_argument(
-        '--image_dir',
-        help='Directory to search for images, with optional recursion by adding --recursive')
-    
+        "--image_dir",
+        help="Directory to search for images, with optional recursion by adding --recursive",
+    )
+
     parser.add_argument(
-        '--recursive',
-        action='store_true',
-        help='Recurse into directories, only meaningful if using --image_dir')
-    
+        "--recursive",
+        action="store_true",
+        help="Recurse into directories, only meaningful if using --image_dir",
+    )
+
     parser.add_argument(
-        '--output_dir',
-        help='Directory for output images (defaults to same as input)')
-    
+        "--output_dir", help="Directory for output images (defaults to same as input)"
+    )
+
     parser.add_argument(
-        '--image_size',
+        "--image_size",
         type=int,
         default=None,
-        help=('Force image resizing to a (square) integer size (not recommended to change this)'))
-    
+        help=(
+            "Force image resizing to a (square) integer size (not recommended to change this)"
+        ),
+    )
+
     parser.add_argument(
-        '--threshold',
+        "--threshold",
         type=float,
         default=DEFAULT_RENDERING_CONFIDENCE_THRESHOLD,
-        help=('Confidence threshold between 0 and 1.0; only render' + 
-              ' boxes above this confidence (defaults to {})'.format(
-              DEFAULT_RENDERING_CONFIDENCE_THRESHOLD)))
-    
+        help=(
+            "Confidence threshold between 0 and 1.0; only render"
+            + " boxes above this confidence (defaults to {})".format(
+                DEFAULT_RENDERING_CONFIDENCE_THRESHOLD
+            )
+        ),
+    )
+
     parser.add_argument(
-        '--crop',
+        "--crop",
         default=False,
         action="store_true",
-        help=('If set, produces separate output images for each crop, '
-              'rather than adding bounding boxes to the original image'))
-    
+        help=(
+            "If set, produces separate output images for each crop, "
+            "rather than adding bounding boxes to the original image"
+        ),
+    )
+
     parser.add_argument(
-        '--box_thickness',
+        "--box_thickness",
         type=int,
         default=DEFAULT_BOX_THICKNESS,
-        help=('Line width (in pixels) for box rendering (defaults to {})'.format(
-              DEFAULT_BOX_THICKNESS)))
-    
+        help=(
+            "Line width (in pixels) for box rendering (defaults to {})".format(
+                DEFAULT_BOX_THICKNESS
+            )
+        ),
+    )
+
     parser.add_argument(
-        '--box_expansion',
+        "--box_expansion",
         type=int,
         default=DEFAULT_BOX_EXPANSION,
-        help=('Number of pixels to expand boxes by (defaults to {})'.format(
-              DEFAULT_BOX_EXPANSION)))
-        
+        help=(
+            "Number of pixels to expand boxes by (defaults to {})".format(
+                DEFAULT_BOX_EXPANSION
+            )
+        ),
+    )
+
     if len(sys.argv[1:]) == 0:
         parser.print_help()
         parser.exit()
 
     args = parser.parse_args()
 
-    assert os.path.exists(args.detector_file), 'detector file {} does not exist'.format(
-        args.detector_file)
-    assert 0.0 < args.threshold <= 1.0, 'Confidence threshold needs to be between 0 and 1'
+    assert os.path.exists(args.detector_file), "detector file {} does not exist".format(
+        args.detector_file
+    )
+    assert (
+        0.0 < args.threshold <= 1.0
+    ), "Confidence threshold needs to be between 0 and 1"
 
     if args.image_file:
         image_file_names = [args.image_file]
     else:
         image_file_names = ImagePathUtils.find_images(args.image_dir, args.recursive)
 
-    print('Running detector on {} images...'.format(len(image_file_names)))
+    print("Running detector on {} images...".format(len(image_file_names)))
 
     if args.output_dir:
         os.makedirs(args.output_dir, exist_ok=True)
@@ -483,33 +563,37 @@ def main():
             # but for a single image, args.image_dir is also None
             args.output_dir = os.path.dirname(args.image_file)
 
-    load_and_run_detector(model_file=args.detector_file,
-                          image_file_names=image_file_names,
-                          output_dir=args.output_dir,
-                          render_confidence_threshold=args.threshold,
-                          box_thickness=args.box_thickness,
-                          box_expansion=args.box_expansion,                          
-                          crop_images=args.crop,
-                          image_size=args.image_size)
+    load_and_run_detector(
+        model_file=args.detector_file,
+        image_file_names=image_file_names,
+        output_dir=args.output_dir,
+        render_confidence_threshold=args.threshold,
+        box_thickness=args.box_thickness,
+        box_expansion=args.box_expansion,
+        crop_images=args.crop,
+        image_size=args.image_size,
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
 
-#%% Interactive driver
+# %% Interactive driver
 
 if False:
 
-    #%%
-    model_file = r'c:\temp\models\md_v4.1.0.pb'
-    image_file_names = ImagePathUtils.find_images(r'c:\temp\demo_images\ssverymini')
-    output_dir = r'c:\temp\demo_images\ssverymini'
+    # %%
+    model_file = r"c:\temp\models\md_v4.1.0.pb"
+    image_file_names = ImagePathUtils.find_images(r"c:\temp\demo_images\ssverymini")
+    output_dir = r"c:\temp\demo_images\ssverymini"
     render_confidence_threshold = 0.8
     crop_images = True
 
-    load_and_run_detector(model_file=model_file,
-                          image_file_names=image_file_names,
-                          output_dir=output_dir,
-                          render_confidence_threshold=render_confidence_threshold,
-                          crop_images=crop_images)
+    load_and_run_detector(
+        model_file=model_file,
+        image_file_names=image_file_names,
+        output_dir=output_dir,
+        render_confidence_threshold=render_confidence_threshold,
+        crop_images=crop_images,
+    )
