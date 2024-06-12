@@ -35,7 +35,7 @@ COORD_DIGITS = 4
 
 model_variant = os.environ.get('MODEL_TYPE', '0')
 
-if model_variant == 2:
+if model_variant == "2":
 # Label mapping for MegaDetector
     
     DEFAULT_DETECTOR_LABEL_MAP = {
