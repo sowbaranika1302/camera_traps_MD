@@ -13,7 +13,7 @@ where indices are string integers.
 import os
 model_variant = os.environ.get('MODEL_TYPE', '0')
 
-if model_variant == 2:
+if model_variant == "2":
     NUM_DETECTOR_CATEGORIES = 23
   # this is for choosing colors, so ignoring the "empty" class
     annotation_bbox_categories = [
