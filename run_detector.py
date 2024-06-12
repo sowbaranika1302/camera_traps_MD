@@ -37,13 +37,7 @@ model_variant = os.environ.get('MODEL_TYPE', '0')
 
 if model_variant == 2:
 # Label mapping for MegaDetector
-    DEFAULT_DETECTOR_LABEL_MAP = {
-        '1': 'animal',
-        '2': 'person',
-        '3': 'vehicle',
-        # available in megadetector v4+
-    }
-else:
+    
     DEFAULT_DETECTOR_LABEL_MAP = {
         "1": "bird",
         "2": "eastern gray squirrel",
@@ -70,6 +64,14 @@ else:
         "23": "american black bear"
         # available in megadetector v4+
     }
+else:
+    DEFAULT_DETECTOR_LABEL_MAP = {
+        '1': 'animal',
+        '2': 'person',
+        '3': 'vehicle',
+        # available in megadetector v4+
+    }
+
 
 
 # Each version of the detector is associated with some "typical" values

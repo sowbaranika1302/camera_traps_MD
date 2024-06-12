@@ -17,11 +17,29 @@ if model_variant == 2:
     NUM_DETECTOR_CATEGORIES = 23
   # this is for choosing colors, so ignoring the "empty" class
     annotation_bbox_categories = [
-        {'id': 0, 'name': 'empty'},
-        {'id': 1, 'name': 'animal'},
-        {'id': 2, 'name': 'person'},
-        {'id': 3, 'name': 'group'},  # group of animals
-        {'id': 4, 'name': 'vehicle'}
+        {'id': 1, 'name': 'bird'},
+        {'id': 2, 'name': 'eastern gray squirrel'},
+        {'id': 3, 'name': 'eastern chipmunk'},
+        {'id': 4, 'name': 'woodchuck'},
+        {'id': 5, 'name': 'wild turkey'},
+        {'id': 6, 'name': 'white-tailed deer'},
+        {'id': 7, 'name': 'virginia opossum'},
+        {'id': 8, 'name': 'eastern cottontail'},
+        {'id': 9, 'name': 'empty'},
+        {'id': 10, 'name': 'vehicle'},
+        {'id': 11, 'name': 'striped skunk'},
+        {'id': 12, 'name': 'red fox'},
+        {'id': 13, 'name': 'eastern fox squirrel'},
+        {'id': 14, 'name': 'northern raccoon'},
+        {'id': 15, 'name': 'grey fox'},
+        {'id': 16, 'name': 'horse'},
+        {'id': 17, 'name': 'dog'},
+        {'id': 18, 'name': 'american crow'},
+        {'id': 19, 'name': 'chicken'},
+        {'id': 20, 'name': 'domestic cat'},
+        {'id': 21, 'name': 'coyote'},
+        {'id': 22, 'name': 'bobcat'},
+        {'id': 23, 'name': 'american black bear'}
     ]
 
     # MegaDetector outputs
