@@ -33,33 +33,44 @@ FAILURE_IMAGE_OPEN = 'Failure image access'
 CONF_DIGITS = 3
 COORD_DIGITS = 4
 
+model_variant = os.environ.get('MODEL_TYPE', '0')
+
+if model_variant == 2:
 # Label mapping for MegaDetector
-DEFAULT_DETECTOR_LABEL_MAP = {
-    '1': 'animal',
-    '2': 'person',
-    '3': 'vehicle',
-    '4': 'None',
-    '5': 'None',
-    '6': 'None',
-    '7': 'None',
-    '8': 'None',
-    '9': 'None',
-    '10': 'None',
-    '11': 'None',
-    '12': 'None',
-    '13': 'None',
-    '14': 'None',
-    '15': 'None',
-    '16': 'None',
-    '17': 'None',
-    '18': 'None',
-    '19': 'None',
-    '20': 'None',
-    '21': 'None',
-    '22': 'None',
-    '23': 'None'
-    # available in megadetector v4+
-}
+    DEFAULT_DETECTOR_LABEL_MAP = {
+        '1': 'animal',
+        '2': 'person',
+        '3': 'vehicle',
+        # available in megadetector v4+
+    }
+else:
+    DEFAULT_DETECTOR_LABEL_MAP = {
+        "1": "bird",
+        "2": "eastern gray squirrel",
+        "3": "eastern chipmunk",
+        "4": "woodchuck",
+        "5": "wild turkey",
+        "6": "white-tailed deer",
+        "7": "virginia opossum",
+        "8": "eastern cottontail",
+        "9": "empty",
+        "10": "vehicle",
+        "11": "striped skunk",
+        "12": "red fox",
+        "13": "eastern fox squirrel",
+        "14": "northern raccoon",
+        "15": "grey fox",
+        "16": "horse",
+        "17": "dog",
+        "18": "american crow",
+        "19": "chicken",
+        "20": "domestic cat",
+        "21": "coyote",
+        "22": "bobcat",
+        "23": "american black bear"
+        # available in megadetector v4+
+    }
+
 
 # Each version of the detector is associated with some "typical" values
 # that are included in output files, so that downstream applications can 
