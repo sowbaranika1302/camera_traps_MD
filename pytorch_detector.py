@@ -32,7 +32,7 @@ print(f'Using PyTorch version {torch.__version__}')
 
 class PTDetector:
 
-    IMAGE_SIZE = 1280  
+    IMAGE_SIZE = 448  
     STRIDE = 64
 
     def __init__(self, model_path: str, force_cpu: bool = False):
